@@ -1,5 +1,5 @@
 # .github/workflows/main.yml
-# Pipeline CI/CD: Docker Deploy en AWS EC2 mediante Self-Hosted Runner (Sin SonarQube)
+# Pipeline CI/CD: Docker Deploy en AWS EC2 mediante Self-Hosted Runner (Sin SonarQube y sin errores de Tokens)
 
 name: CI/CD - Sunflower Docker Deploy AWS
 
@@ -19,10 +19,10 @@ env:
   DB_PASSWORD: 'benja'
 
 jobs:
-  # 🐳 UNICO JOB: Compilación y Despliegue directo en la EC2 de AWS
+  # 🐳 ÚNICO JOB: Compilación y Despliegue directo en la EC2 de AWS
   build-and-deploy:
     name: Build and Docker Deploy on AWS
-    runs-on: self-hosted       # Esto hará que corra dentro de tu servidor EC2
+    runs-on: self-hosted       # 🚨 Esto obliga a correr DENTRO de tu servidor de Amazon, saltándose los servidores de GitHub
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,18 +42,13 @@ jobs:
         run: |
           echo "🔄 Iniciando despliegue automatizado en el servidor de AWS..."
           
-          # Instalar Docker en la EC2 automáticamente si no existiera
-          if ! command -v docker &> /dev/null; then
-            sudo apt-get update && sudo apt-get install -y docker.io docker-compose
-            sudo usermod -aG docker ubuntu
-          fi
-          
+          # Moverse a la carpeta donde Arly guardó las configuraciones de docker
           cd docker
           
-          echo "🧹 Limpiando despliegue anterior en la nube..."
+          echo "🧹 Limpiando despliegue anterior..."
           sudo docker-compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true
           
-          echo "🏗️ Construyendo y levantando contenedores en AWS..."
+          echo "🏗️ Construyendo y levantando contenedores en la EC2..."
           sudo docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build
           
           echo "⏳ Esperando 30 segundos para la Base de Datos..."
@@ -70,4 +65,4 @@ jobs:
           echo "📝 Logs finales de Spring Boot:"
           sudo docker logs --tail 50 ${APP_CONTAINER_NAME}
           
-          echo "✅ ¡Proyecto Sunflower desplegado con éxito en internet!"
+          echo "✅ ¡Proyecto Sunflower desplegado con éxito!"
