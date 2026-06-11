@@ -109,7 +109,7 @@ jobs:
             # Autenticarse contra Amazon ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $REGISTRY_DOMAIN
 
-            # Detener y limpiar contenedores anteriores si existen
+            # Detener si existe el contenedor previo
             docker rm -f ${{ env.APP_CONTAINER_NAME }} || true
 
             # Desplegar el nuevo contenedor Docker de Sunflower
