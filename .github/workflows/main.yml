@@ -1,7 +1,5 @@
 # .github/workflows/main.yml
-# Pipeline CI/CD: Docker Deploy en AWS EC2 mediante Self-Hosted Runner (Sin SonarQube)
-
-name: CI/CD - Sunflower Docker Deploy AWS
+name: CI/CD - Sunflower Docker Deploy AWS (Optimizado para Disco)
 
 on:
   push:
@@ -19,10 +17,10 @@ env:
   DB_PASSWORD: 'benja'
 
 jobs:
-  # 🐳 ÚNICO JOB: Compilación y Despliegue directo en la EC2 de AWS
-  build-and-deploy:
-    name: Build and Docker Deploy on AWS
-    runs-on: self-hosted       # Ejecuta directo en tu servidor de AWS
+  # 🧪 TRABAJO 1: Compila el JAR usando los servidores GRATUITOS de GitHub (Mucho espacio)
+  build-jar:
+    name: 🔨 Compilar JAR en GitHub
+    runs-on: ubuntu-latest  # Usa la nube pública de GitHub para no gastar tu disco de AWS
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,31 +35,53 @@ jobs:
       - name: Build JAR with Maven
         run: mvn -B clean package -DskipTests
 
+      - name: 📦 Guardar JAR como Artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+
+  # 🐳 TRABAJO 2: Levanta Docker directo en tu EC2 consumiendo el JAR ya compilado
+  deploy-aws:
+    name: 🚀 Desplegar en AWS EC2
+    runs-on: self-hosted  # Tu servidor de AWS
+    needs: build-jar      # Espera a que el trabajo 1 termine
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📥 Descargar JAR ya listo
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: target/    # Lo mete directo en la carpeta target para que el Dockerfile lo use
+
       - name: Deploy with Docker Compose
         shell: bash
         run: |
-          echo "🔄 Iniciando despliegue automatizado en el servidor de AWS..."
+          echo "🔄 Iniciando despliegue optimizado en AWS..."
           
           cd docker
           
-          echo "🧹 Limpiando despliegue anterior..."
+          echo "🧹 Limpieza preventiva de imágenes viejas para ganar espacio..."
           sudo docker compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true
+          sudo docker image prune -f || true
           
-          echo "🏗️ Construyendo y levantando contenedores en la EC2..."
+          echo "🏗️ Levantando contenedores (Docker usará el JAR que descargamos)..."
           sudo docker compose -p ${DOCKER_PROJECT_NAME} up -d --build
           
           echo "⏳ Esperando 30 segundos para la Base de Datos..."
           sleep 30
           
           if [ -f "../sql/init.sql" ]; then
-            echo "🗄️ Cargando la estructura SQL local en la base de datos de AWS..."
+            echo "🗄️ Cargando la estructura SQL local..."
             sudo cat ../sql/init.sql | sudo docker exec -i ${DB_CONTAINER_NAME} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} || true
           fi
           
           echo "📊 Verificando estado de los servicios:"
           sudo docker compose -p ${DOCKER_PROJECT_NAME} ps
           
-          echo "📝 Logs finales de Spring Boot:"
+          echo "📝 Logs finales:"
           sudo docker logs --tail 50 ${APP_CONTAINER_NAME}
           
-          echo "✅ ¡Proyecto Sunflower desplegado con éxito!"
+          echo "✅ ¡Despliegue completado con éxito sin saturar el disco!"
