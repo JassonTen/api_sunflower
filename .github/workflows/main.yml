@@ -68,7 +68,8 @@ jobs:
           sudo docker image prune -f || true
           
           echo "🏗️ Levantando contenedores (Docker usará el JAR que descargamos)..."
-          sudo docker compose -p ${DOCKER_PROJECT_NAME} up -d --build
+          # Agregamos --no-cache para evitar que consuma espacio retenido por capas corruptas ⬇️
+          sudo docker compose -p ${DOCKER_PROJECT_NAME} up -d --build --no-cache
           
           echo "⏳ Esperando 30 segundos para la Base de Datos..."
           sleep 30
