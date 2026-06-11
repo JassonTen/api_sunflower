@@ -3,9 +3,9 @@ name: CI/CD - Sunflower Ecommerce AWS
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 env:
   AWS_REGION: us-east-1
@@ -16,7 +16,7 @@ jobs:
   # 🧪 1. Compilar el JAR usando los servidores de GitHub
   test-and-build:
     name: 🧪 Test & Build JAR
-    runs-on: ubuntu-latest  # Usará los servidores de GitHub, no tu máquina virtual
+    runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
@@ -60,6 +60,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: 🔑 Login a Amazon ECR
@@ -92,22 +93,25 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Instalar Docker en tu servidor de AWS de forma automatizada si no existe
+            # Instalar Docker en tu servidor de AWS si no existe
             if ! command -v docker &> /dev/null; then
               sudo apt-get update && sudo apt-get install -y docker.io
               sudo usermod -aG docker ubuntu
             fi
 
-            # Autenticarse en Amazon ECR desde la terminal de tu servidor
+            # Configurar las credenciales temporales completas dentro de la EC2
             REGISTRY_DOMAIN=$(echo "${{ needs.docker-build-push.outputs.image }}" | cut -d'/' -f1)
             aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
             aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set aws_session_token ${{ secrets.AWS_SESSION_TOKEN }}
             aws configure set region ${{ env.AWS_REGION }}
+            
+            # Autenticarse contra Amazon ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $REGISTRY_DOMAIN
 
             # Detener y limpiar contenedores anteriores si existen
             docker rm -f ${{ env.APP_CONTAINER_NAME }} || true
 
-            # Desplegar el nuevo contenedor Docker de Sunflower en internet
+            # Desplegar el nuevo contenedor Docker de Sunflower
             docker run -d --name ${{ env.APP_CONTAINER_NAME }} -p 8081:8081 ${{ needs.docker-build-push.outputs.image }}
             echo "✅ ¡Proyecto Sunflower en vivo en AWS!"
