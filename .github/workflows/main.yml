@@ -17,10 +17,10 @@ env:
   DB_PASSWORD: 'benja'
 
 jobs:
-  # 🧪 TRABAJO 1: Compila el JAR usando los servidores GRATUITOS de GitHub (Mucho espacio)
+  # 🧪 TRABAJO 1: Compila el JAR usando los servidores GRATUITOS de GitHub
   build-jar:
     name: 🔨 Compilar JAR en GitHub
-    runs-on: ubuntu-latest  # Usa la nube pública de GitHub para no gastar tu disco de AWS
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,11 +41,11 @@ jobs:
           name: app-jar
           path: target/*.jar
 
-  # 🐳 TRABAJO 2: Levanta Docker directo en tu EC2 consumiendo el JAR ya compilado
+  # 🐳 TRABAJO 2: Levanta Docker directo en tu EC2 consumiendo el JAR
   deploy-aws:
     name: 🚀 Desplegar en AWS EC2
-    runs-on: self-hosted  # Tu servidor de AWS
-    needs: build-jar      # Espera a que el trabajo 1 termine
+    runs-on: self-hosted
+    needs: build-jar
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-jar
-          path: target/    # Lo mete directo en la carpeta target para que el Dockerfile lo use
+          path: target/
 
       - name: Deploy with Docker Compose
         shell: bash
@@ -67,9 +67,11 @@ jobs:
           sudo docker compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true
           sudo docker image prune -f || true
           
-          echo "🏗️ Levantando contenedores (Docker usará el JAR que descargamos)..."
-          # Agregamos --no-cache para evitar que consuma espacio retenido por capas corruptas ⬇️
-          sudo docker compose -p ${DOCKER_PROJECT_NAME} up -d --build --no-cache
+          echo "🏗️ Construyendo imágenes sin usar caché vieja..."
+          sudo docker compose -p ${DOCKER_PROJECT_NAME} build --no-cache
+          
+          echo "🚀 Levantando servicios en segundo plano..."
+          sudo docker compose -p ${DOCKER_PROJECT_NAME} up -d
           
           echo "⏳ Esperando 30 segundos para la Base de Datos..."
           sleep 30
