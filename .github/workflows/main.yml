@@ -1,5 +1,5 @@
 # .github/workflows/main.yml
-# Pipeline CI/CD: Docker Deploy en AWS EC2 mediante Self-Hosted Runner (Sin SonarQube y sin errores de Tokens)
+# Pipeline CI/CD: Docker Deploy en AWS EC2 mediante Self-Hosted Runner (Sin SonarQube)
 
 name: CI/CD - Sunflower Docker Deploy AWS
 
@@ -22,7 +22,7 @@ jobs:
   # 🐳 ÚNICO JOB: Compilación y Despliegue directo en la EC2 de AWS
   build-and-deploy:
     name: Build and Docker Deploy on AWS
-    runs-on: self-hosted       # 🚨 Esto obliga a correr DENTRO de tu servidor de Amazon, saltándose los servidores de GitHub
+    runs-on: self-hosted       # Ejecuta directo en tu servidor de AWS
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,14 +42,13 @@ jobs:
         run: |
           echo "🔄 Iniciando despliegue automatizado en el servidor de AWS..."
           
-          # Moverse a la carpeta donde Arly guardó las configuraciones de docker
           cd docker
           
           echo "🧹 Limpiando despliegue anterior..."
-          sudo docker-compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true
+          sudo docker compose -p ${DOCKER_PROJECT_NAME} down -v --remove-orphans || true
           
           echo "🏗️ Construyendo y levantando contenedores en la EC2..."
-          sudo docker-compose -p ${DOCKER_PROJECT_NAME} up -d --build
+          sudo docker compose -p ${DOCKER_PROJECT_NAME} up -d --build
           
           echo "⏳ Esperando 30 segundos para la Base de Datos..."
           sleep 30
@@ -60,7 +59,7 @@ jobs:
           fi
           
           echo "📊 Verificando estado de los servicios:"
-          sudo docker-compose -p ${DOCKER_PROJECT_NAME} ps
+          sudo docker compose -p ${DOCKER_PROJECT_NAME} ps
           
           echo "📝 Logs finales de Spring Boot:"
           sudo docker logs --tail 50 ${APP_CONTAINER_NAME}
