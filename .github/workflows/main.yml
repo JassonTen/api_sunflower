@@ -10,8 +10,8 @@ on:
 
 env:
   DOCKER_PROJECT_NAME: 'sunflowerapp'
-  APP_CONTAINER_NAME: 'ecommerce_app'     # 👈 Corregido: Coincide con tu Docker Compose
-  DB_CONTAINER_NAME: 'ecommerce_mysql'    # 👈 Corregido: Coincide con tu Docker Compose
+  APP_CONTAINER_NAME: 'ecommerce_app'     
+  DB_CONTAINER_NAME: 'ecommerce_mysql'    
   DB_NAME: 'ecommerce_db'
   DB_USER: 'root'
   DB_PASSWORD: 'benja'
