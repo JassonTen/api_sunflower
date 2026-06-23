@@ -14,7 +14,8 @@ env:
   DB_CONTAINER_NAME: 'ecommerce_mysql'    
   DB_NAME: 'ecommerce_db'
   DB_USER: 'root'
-  DB_PASSWORD: 'benja'
+  # Único valor dinámico extraído desde los Secrets de GitHub por seguridad
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
 
 jobs:
   # 🧪 TRABAJO 1: Compila el JAR usando los servidores GRATUITOS de GitHub
